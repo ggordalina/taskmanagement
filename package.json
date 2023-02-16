@@ -1,0 +1,27 @@
+{
+  "name": "taskmanagement",
+  "version": "1.0.0",
+  "description": "Task Management - Sword Health Challenge | Gonçalo Gordalina",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ggordalina/taskmanagement.git"
+  },
+  "keywords": [
+    "task",
+    "management",
+    "best",
+    "tool",
+    "ever"
+  ],
+  "author": "me",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ggordalina/taskmanagement/issues"
+  },
+  "homepage": "https://github.com/ggordalina/taskmanagement#readme"
+}
