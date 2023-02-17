@@ -21,3 +21,17 @@ services:
     restart: unless-stopped
     ports: 
         - 8080:8080
+
+  task-manager:
+    build:
+      context: .
+    container_name: task-manager
+    depends_on:
+      - mysql
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    environment:
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}      

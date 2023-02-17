@@ -5,8 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "migrate": "node -r dotenv/config database/init.js",
-    "start": "npm migrate && node -r dotenv/config app.js"
+    "start": "node -r dotenv/config app.js"
   },
   "repository": {
     "type": "git",

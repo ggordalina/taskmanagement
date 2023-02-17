@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const tasksRouter = require('./http/tasks-routing');
 
 const app = express();
-const port = 3000;
+const port = process.env.APP_PORT;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
