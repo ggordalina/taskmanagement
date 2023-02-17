@@ -9,10 +9,12 @@ class Task {
     }
 
     obfuscateSensitiveData() {
-        this.summary = "This content cannot be diplayed because it contains sensitive data";
+        this.summary = 'This content cannot be diplayed because it contains sensitive data.';
     }
 
     isClosed() {
         return this.closedDate != null;
     }
 }
+
+module.exports = Task;

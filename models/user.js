@@ -11,3 +11,5 @@ class User {
         this.isManager = userRole.description == 'Manager';
     }
 }
+
+module.exports = User;
