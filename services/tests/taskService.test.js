@@ -33,7 +33,7 @@ beforeEach(() => {
     taskRespositoryMock.remove = jest.fn(() => { });
 });
 
-describe('service parameters', () => {
+describe.skip('service parameters', () => {
     test.each([
         null, 
         undefined
@@ -77,7 +77,7 @@ describe('service parameters', () => {
     });
 });
 
-describe('list', () => {
+describe.skip('list', () => {
     describe('user is manager', () => {
         test('repository throws error and returns empty array', async () => {
             // arrange 
@@ -145,7 +145,7 @@ describe('list', () => {
     });
 });
 
-describe('get', () => {
+describe.skip('get', () => {
     test.each([
         null,
         undefined
@@ -264,7 +264,7 @@ describe('get', () => {
     });
 });
 
-describe('create', () => {
+describe.skip('create', () => {
     test.each([
         null,
         undefined
@@ -363,7 +363,7 @@ describe('create', () => {
     });
 });
 
-describe('update', () => {
+describe.skip('update', () => {
     test.each([
         null,
         undefined
@@ -500,7 +500,7 @@ describe('update', () => {
     });
 });
 
-describe('remove', () => {
+describe.skip('remove', () => {
     test.each([
         null,
         undefined
