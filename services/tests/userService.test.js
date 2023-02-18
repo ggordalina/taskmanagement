@@ -18,11 +18,11 @@ beforeEach(() => {
     userRoleRespositoryMock.get = jest.fn(() => { });
 });
 
-describe('service parameters', () => {
+describe('parameters', () => {
     test.each([
         null, 
         undefined
-    ])('userRepository is invalid', (userRepository) => {
+    ])('userRepository is invalid and throws error', (userRepository) => {
         // arrange
         const expectError = new Error('userRepository cannot be empty.');
         
@@ -36,7 +36,7 @@ describe('service parameters', () => {
     test.each([
         null, 
         undefined
-    ])('userRoleRepository is invalid', (userRoleRepository) => {
+    ])('userRoleRepository is invalid and throws error', (userRoleRepository) => {
         // arrange
         const expectError = new Error('userRoleRepository cannot be empty.');
         
@@ -50,7 +50,7 @@ describe('service parameters', () => {
     test.each([
         null, 
         undefined
-    ])('logger is invalid', (logger) => {
+    ])('logger is invalid and throws error', (logger) => {
         // arrange
         const expectError = new Error('logger cannot be empty.');
         

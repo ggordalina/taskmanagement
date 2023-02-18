@@ -8,11 +8,10 @@ const Task = require('../../models/task');
 const userNotManager = new User('341', '9988', 'Clive', '0987');
 const userManager = new User('1234', '12312', 'James', '1234');
 userManager.setRole(new UserRole('123', 'Manager'));
-const defaultTask = new Task('123', 'pid-7788', 'simple', false, null, userNotManager.id);
+const defaultTask = new Task('pid-7788', 'simple', false, null, userNotManager.id);
 
-getService = (user = null) => taskService(taskRespositoryMock, loggerMock, user ?? userNotManager);
+getService = () => taskService(taskRespositoryMock, loggerMock);
 getClonedTask = () => new Task(
-    defaultTask.id,
     defaultTask.code,
     defaultTask.summary,
     defaultTask.hasSensitiveData,
@@ -33,11 +32,11 @@ beforeEach(() => {
     taskRespositoryMock.remove = jest.fn(() => { });
 });
 
-describe.skip('service parameters', () => {
+describe('parameters', () => {
     test.each([
         null, 
         undefined
-    ])('repository is invalid', (repository) => {
+    ])('repository is invalid and throws error', (repository) => {
         // arrange
         const expectError = new Error('repository cannot be empty.');
         
@@ -51,7 +50,7 @@ describe.skip('service parameters', () => {
     test.each([
         null, 
         undefined
-    ])('logger is invalid', (logger) => {
+    ])('logger is invalid and throws error', (logger) => {
         // arrange
         const expectError = new Error('logger cannot be empty.');
         
@@ -61,23 +60,21 @@ describe.skip('service parameters', () => {
         // act & assert
         expect(func).toThrow(expectError);
     });
-
-    test.each([
-        null, 
-        undefined
-    ])('currentUser is invalid', (currentUser) => {
-        // arrange
-        const expectError = new Error('currentUser cannot be empty.');
-        
-        // act
-        let func = () => taskService(taskRespositoryMock, loggerMock, currentUser);
-
-        // act & assert
-        expect(func).toThrow(expectError);
-    });
 });
 
-describe.skip('list', () => {
+describe('list', () => {
+    test.each([
+        null,
+        undefined
+    ])('current user is invalid and throws error', async (currentUser) => {
+        // arrange
+        const expectedError = new Error('currentUser cannot be null.');
+
+        // act & assert
+        await expect(getService().list(currentUser)).rejects.toEqual(expectedError);
+        expect(taskRespositoryMock.get.mock.calls).toHaveLength(0);
+    });
+
     describe('user is manager', () => {
         test('repository throws error and returns empty array', async () => {
             // arrange 
@@ -86,10 +83,10 @@ describe.skip('list', () => {
             taskRespositoryMock.list = jest.fn().mockRejectedValue(expectedError);
 
             // act
-            let result = await getService(userManager).list();
+            let result = await getService().list(userManager);
 
             // assert
-            expect(result).toEqual([]);
+            expect(result).toHaveLength(0);
             expect(taskRespositoryMock.list.mock.calls).toHaveLength(1);
             expect(loggerMock.error.mock.calls).toHaveLength(1);
             expect(loggerMock.error.mock.calls[0][0]).toBe(expectedErrorMessage);
@@ -101,7 +98,7 @@ describe.skip('list', () => {
             taskRespositoryMock.list = jest.fn(() => [defaultTask]);
 
             // act
-            let result = await getService(userManager).list();
+            let result = await getService().list(userManager);
 
             // assert
             expect(result).toEqual([defaultTask]);
@@ -118,7 +115,7 @@ describe.skip('list', () => {
             taskRespositoryMock.listByUserId = jest.fn().mockRejectedValue(expectedError);
 
             // act
-            let result = await getService().list();
+            let result = await getService().list(userNotManager);
 
             // assert
             expect(result).toEqual([]);
@@ -134,7 +131,7 @@ describe.skip('list', () => {
             taskRespositoryMock.listByUserId = jest.fn(() => [defaultTask]);
 
             // act
-            let result = await getService().list();
+            let result = await getService().list(userNotManager);
 
             // assert
             expect(result).toEqual([defaultTask]);
@@ -145,16 +142,28 @@ describe.skip('list', () => {
     });
 });
 
-describe.skip('get', () => {
+describe('get', () => {
     test.each([
         null,
         undefined
-    ])('taskcode is invalid and throws error', async (taskCode) => {
+    ])('current user is invalid and throws error', async (currentUser) => {
+        // arrange
+        const expectedError = new Error('currentUser cannot be null.');
+
+        // act & assert
+        await expect(getService().get(currentUser, defaultTask.code)).rejects.toEqual(expectedError);
+        expect(taskRespositoryMock.get.mock.calls).toHaveLength(0);
+    });
+
+    test.each([
+        null,
+        undefined
+    ])('task code is invalid and throws error', async (taskCode) => {
         // arrange
         const expectedError = new Error('taskCode cannot be empty.');
 
         // act & assert
-        await expect(getService().get(taskCode)).rejects.toEqual(expectedError);
+        await expect(getService().get(userNotManager, taskCode)).rejects.toEqual(expectedError);
         expect(taskRespositoryMock.get.mock.calls).toHaveLength(0);
     });
 
@@ -165,7 +174,7 @@ describe.skip('get', () => {
         taskRespositoryMock.get = jest.fn().mockRejectedValue(expectedError);
 
         // act
-        let result = await getService().get(defaultTask.code);
+        let result = await getService().get(userNotManager, defaultTask.code);
 
         // assert
         expect(result).toBeNull();
@@ -179,26 +188,29 @@ describe.skip('get', () => {
 
     test('repository returns empty result and returns null', async () => {
         // arrange
-        taskRespositoryMock.get = jest.fn(() => [ ]);
+        const expectedErrorMessage = 'task was not found:';
+        taskRespositoryMock.get = jest.fn(() => null);
 
         // act
-        let result = await getService().get(defaultTask.code);
+        let result = await getService().get(userManager, defaultTask.code);
 
         // assert
         expect(result).toBeNull();
         expect(taskRespositoryMock.get.mock.calls).toHaveLength(1);
         expect(taskRespositoryMock.get.mock.calls[0][0]).toBe(defaultTask.code);
+        expect(loggerMock.warning.mock.calls).toHaveLength(1);
+        expect(loggerMock.warning.mock.calls[0][0]).toBe(expectedErrorMessage);
+        expect(loggerMock.warning.mock.calls[0][1]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(0);
-        expect(loggerMock.warning.mock.calls).toHaveLength(0);
     });
 
     test('user is manager and task does not belong to user and returns task', async () => {
         // arrage
         let task = getClonedTask();
-        taskRespositoryMock.get = jest.fn(() => [task]);
+        taskRespositoryMock.get = jest.fn(() => task);
 
         // act
-        let result = await getService(userManager).get(task.code);
+        let result = await getService().get(userManager, task.code);
 
         // assert
         expect(result).toEqual(task);
@@ -212,11 +224,11 @@ describe.skip('get', () => {
         // arrange
         const expectedResult = getClonedTask();
         expectedResult.userId = '4444';
-        const expectedWarningMessage = 'retrival task attempt on authorized user.';
+        const expectedWarningMessage = 'retrival task attempt on unauthorized user.';
         taskRespositoryMock.get = jest.fn(() => [expectedResult]);
 
         // act
-        let result = await getService().get(expectedResult.code);
+        let result = await getService().get(userNotManager, expectedResult.code);
 
         // assert
         expect(result).toBeNull();
@@ -234,10 +246,10 @@ describe.skip('get', () => {
         const expectedResult = getClonedTask();
         expectedResult.hasSensitiveData = true;
         expectedResult.summary = expectedObfuscatedMessage;
-        taskRespositoryMock.get = jest.fn(() => [expectedResult]);
+        taskRespositoryMock.get = jest.fn(() => expectedResult);
 
         // act
-        let result = await getService().get(expectedResult.code);
+        let result = await getService().get(userManager, expectedResult.code);
 
         // assert
         expect(result).toEqual(expectedResult);
@@ -250,10 +262,10 @@ describe.skip('get', () => {
     test('returns valid task', async () => {
         // arrange
         const task = getClonedTask();
-        taskRespositoryMock.get = jest.fn(() => [task]);
+        taskRespositoryMock.get = jest.fn(() => task);
 
         // act
-        let result = await getService().get(task.code);
+        let result = await getService().get(userManager, task.code);
 
         // assert
         expect(result).toEqual(task);
@@ -264,7 +276,20 @@ describe.skip('get', () => {
     });
 });
 
-describe.skip('create', () => {
+describe('create', () => {
+    test.each([
+        null,
+        undefined
+    ])('current user is invalid and throws error', async (currentUser) => {
+        // arrange
+        const expectedError = new Error('currentUser cannot be null.');
+
+        // act & assert
+        await expect(getService().create(currentUser, defaultTask)).rejects.toEqual(expectedError);
+        expect(taskRespositoryMock.get.mock.calls).toHaveLength(0);
+        expect(taskRespositoryMock.create.mock.calls).toHaveLength(0);
+    })
+
     test.each([
         null,
         undefined
@@ -273,7 +298,7 @@ describe.skip('create', () => {
         const expectedError = new Error('task object cannot be empty.');
 
         // act & assert
-        await expect(getService().create(task)).rejects.toEqual(expectedError);
+        await expect(getService().create(userNotManager, task)).rejects.toEqual(expectedError);
         expect(taskRespositoryMock.get.mock.calls).toHaveLength(0);
         expect(taskRespositoryMock.create.mock.calls).toHaveLength(0);
     });
@@ -285,12 +310,12 @@ describe.skip('create', () => {
         taskRespositoryMock.get = jest.fn().mockRejectedValue(expectedError);
 
         // act
-        let result = await getService().create(defaultTask);
+        let result = await getService().create(userNotManager, defaultTask);
 
         // assert
         expect(result).toBeNull();
-        // expect(taskRespositoryMock.get.mock.calls).toHaveLength(1); // TODO: check why 0
-        // expect(taskRespositoryMock.get.mock.calls[0][0]).toBe(defaultTask.code);
+        expect(taskRespositoryMock.get.mock.calls).toHaveLength(1);
+        expect(taskRespositoryMock.get.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
         expect(loggerMock.error.mock.calls[0][0]).toBe(expectedErrorMessage);
         expect(loggerMock.error.mock.calls[0][1]).toEqual(expectedError);
@@ -302,7 +327,7 @@ describe.skip('create', () => {
         const expectedErrorMessage = 'task.code must be unique.';
         taskRespositoryMock.get = jest.fn(() => [defaultTask]);
 
-        let result = await getService().create(defaultTask);
+        let result = await getService().create(userNotManager, defaultTask);
 
         // assert 
         expect(result).toBeNull();
@@ -319,14 +344,13 @@ describe.skip('create', () => {
         const task = getClonedTask();
         task.userId = null;
         const expectedTaskToCreate = getClonedTask();
-        task.userId = userNotManager.id;
-        task.closedDate = null;
+        expectedTaskToCreate.closedDate = null;
         const expectedWarningMessage = 'task was not created.';
-        taskRespositoryMock.get = jest.fn(() => []);
+        taskRespositoryMock.get = jest.fn(() => null);
         taskRespositoryMock.create = jest.fn(() => false);
 
         // act
-        let result = await getService().create(task);
+        let result = await getService().create(userNotManager, task);
 
         // assert
         expect(result).toBeNull();
@@ -344,13 +368,12 @@ describe.skip('create', () => {
         const task = getClonedTask();
         task.userId = null;
         const expectedTaskToCreate = getClonedTask();
-        expectedTaskToCreate.userId = userNotManager.id;
         expectedTaskToCreate.closedDate = null;
-        taskRespositoryMock.get = jest.fn(() => []);
+        taskRespositoryMock.get = jest.fn(() => null);
         taskRespositoryMock.create = jest.fn(() => true);
 
         // act
-        let result = await getService().create(task);
+        let result = await getService().create(userNotManager, task);
 
         // assert
         expect(result).toEqual(expectedTaskToCreate);
@@ -363,7 +386,33 @@ describe.skip('create', () => {
     });
 });
 
-describe.skip('update', () => {
+describe('update', () => {
+    test.each([
+        null,
+        undefined
+    ])('current user is invalid and throws error', async (currentUser) => {
+        // arrange
+        const expectedError = new Error('currentUser cannot be null.');
+
+        // act & assert
+        await expect(getService().update(currentUser, defaultTask.code, defaultTask)).rejects.toEqual(expectedError);
+        expect(taskRespositoryMock.get.mock.calls).toHaveLength(0);
+        expect(taskRespositoryMock.update.mock.calls).toHaveLength(0);
+    });
+
+    test.each([
+        null,
+        undefined
+    ])('task code is invalid and throws error', async (taskCode) => {
+        // arrange
+        const expectedError = new Error('taskCode cannot be empty.');
+
+        // act & assert
+        await expect(getService().update(userNotManager, taskCode, defaultTask)).rejects.toEqual(expectedError);
+        expect(taskRespositoryMock.get.mock.calls).toHaveLength(0);
+        expect(taskRespositoryMock.update.mock.calls).toHaveLength(0);
+    });
+
     test.each([
         null,
         undefined
@@ -372,7 +421,7 @@ describe.skip('update', () => {
         const expectedError = new Error('task object cannot be null.');
 
         // act & assert
-        await expect(getService().update(task)).rejects.toEqual(expectedError);
+        await expect(getService().update(userNotManager, defaultTask.code, task)).rejects.toEqual(expectedError);
         expect(taskRespositoryMock.get.mock.calls).toHaveLength(0);
         expect(taskRespositoryMock.update.mock.calls).toHaveLength(0);
     });
@@ -384,7 +433,7 @@ describe.skip('update', () => {
         taskRespositoryMock.get = jest.fn().mockRejectedValue(expectedError);
 
         // act
-        let result = await getService().update(defaultTask);
+        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
         expect(result).toBeFalsy();
@@ -399,11 +448,11 @@ describe.skip('update', () => {
 
     test('task does not exist and returns false', async () => {
         // arrange
-        const expectedErrorMessage = 'task does not exist.';
-        taskRespositoryMock.get = jest.fn(() => []);
+        const expectedErrorMessage = 'task does not exist:';
+        taskRespositoryMock.get = jest.fn(() => null);
 
         // act
-        let result = await getService().update(defaultTask);
+        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
         expect(result).toBeFalsy();
@@ -411,6 +460,7 @@ describe.skip('update', () => {
         expect(taskRespositoryMock.get.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
         expect(loggerMock.error.mock.calls[0][0]).toBe(expectedErrorMessage);
+        expect(loggerMock.error.mock.calls[0][1]).toBe(defaultTask.code);
         expect(loggerMock.warning.mock.calls).toHaveLength(0);
         expect(taskRespositoryMock.update.mock.calls).toHaveLength(0);
     });
@@ -420,10 +470,10 @@ describe.skip('update', () => {
         const taskToUpdate = getClonedTask();
         taskToUpdate.userId = '4444';
         const expectedErrorMessage = 'attempt to update other user\' task:';
-        taskRespositoryMock.get = jest.fn(() => [taskToUpdate]);
+        taskRespositoryMock.get = jest.fn(() => taskToUpdate);
 
         // act
-        let result = await getService().update(defaultTask);
+        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
         expect(result).toBeFalsy();
@@ -441,10 +491,10 @@ describe.skip('update', () => {
         const taskToUpdate = getClonedTask();
         taskToUpdate.closedDate = new Date();
         const expectedErrorMessage = 'a closed task cannot be updated:';
-        taskRespositoryMock.get = jest.fn(() => [taskToUpdate]);
+        taskRespositoryMock.get = jest.fn(() => taskToUpdate);
 
         // act
-        let result = await getService().update(defaultTask);
+        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
         expect(result).toBeFalsy();
@@ -460,12 +510,12 @@ describe.skip('update', () => {
     test('task is not updated and returns false', async () => {
         // arrange
         const taskToUpdate = getClonedTask();
-        const expectedErrorMessage = 'task was not updated.'; 
-        taskRespositoryMock.get = jest.fn(() => [taskToUpdate]);
-        taskRespositoryMock.update = jest.fn(() => []);
+        const expectedErrorMessage = 'task was not updated:'; 
+        taskRespositoryMock.get = jest.fn(() => taskToUpdate);
+        taskRespositoryMock.update = jest.fn(() => false);
 
         // act
-        let result = await getService().update(defaultTask);
+        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
         expect(result).toBeFalsy();
@@ -482,11 +532,11 @@ describe.skip('update', () => {
     test('task is updated and returns true', async () => {
         // arrange
         const taskToUpdate = getClonedTask();
-        taskRespositoryMock.get = jest.fn(() => [taskToUpdate]);
-        taskRespositoryMock.update = jest.fn(() => [taskToUpdate]);
+        taskRespositoryMock.get = jest.fn(() => taskToUpdate);
+        taskRespositoryMock.update = jest.fn(() => true);
 
         // act
-        let result = await getService().update(defaultTask);
+        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
         expect(result).toBeTruthy();
@@ -500,16 +550,29 @@ describe.skip('update', () => {
     });
 });
 
-describe.skip('remove', () => {
+describe('remove', () => {
     test.each([
         null,
         undefined
-    ])('taskcode is invalid and throws error', async (taskCode) => {
+    ])('current user is invalid and throws error', async (currentUser) => {
         // arrange
-        const expectedError = new Error('taskCode cannot be null');
+        const expectedError = new Error('currentUser cannot be null.');
 
         // act & assert
-        await expect(getService().remove(taskCode)).rejects.toEqual(expectedError);
+        await expect(getService().remove(currentUser, defaultTask.code)).rejects.toEqual(expectedError);
+        expect(taskRespositoryMock.get.mock.calls).toHaveLength(0);
+        expect(taskRespositoryMock.remove.mock.calls).toHaveLength(0);
+    });
+    
+    test.each([
+        null,
+        undefined
+    ])('task code is invalid and throws error', async (taskCode) => {
+        // arrange
+        const expectedError = new Error('taskCode cannot be null.');
+
+        // act & assert
+        await expect(getService().remove(userNotManager, taskCode)).rejects.toEqual(expectedError);
         expect(taskRespositoryMock.get.mock.calls).toHaveLength(0);
         expect(taskRespositoryMock.remove.mock.calls).toHaveLength(0);
     });
@@ -521,12 +584,12 @@ describe.skip('remove', () => {
         taskRespositoryMock.get = jest.fn().mockRejectedValue(expectedError);
 
         // act
-        let result = await getService().remove(defaultTask.code);
+        let result = await getService().remove(userNotManager, defaultTask.code);
 
         // assert
         expect(result).toBeFalsy();
-        // expect(taskRespositoryMock.get.mock.calls).toHaveLength(1); // TODO: why 0
-        // expect(taskRespositoryMock.get.mock.calls[0][0]).toBe(defaultTask.code);
+        expect(taskRespositoryMock.get.mock.calls).toHaveLength(1);
+        expect(taskRespositoryMock.get.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
         expect(loggerMock.error.mock.calls[0][0]).toBe(expectedErrorMessage);
         expect(loggerMock.error.mock.calls[0][1]).toEqual(expectedError);
@@ -536,11 +599,11 @@ describe.skip('remove', () => {
 
     test('task does not exist and throws error', async () => {
         // arrange
-        const expectedErrorMessage = 'task does not exist.';
-        taskRespositoryMock.get = jest.fn(() => []);
+        const expectedErrorMessage = 'task does not exist:';
+        taskRespositoryMock.get = jest.fn(() => null);
 
         // act
-        let result = await getService().remove(defaultTask.code);
+        let result = await getService().remove(userNotManager, defaultTask.code);
 
         // assert
         expect(result).toBeFalsy();
@@ -548,6 +611,7 @@ describe.skip('remove', () => {
         expect(taskRespositoryMock.get.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
         expect(loggerMock.error.mock.calls[0][0]).toBe(expectedErrorMessage);
+        expect(loggerMock.error.mock.calls[0][1]).toBe(defaultTask.code);
         expect(loggerMock.warning.mock.calls).toHaveLength(0);
         expect(taskRespositoryMock.remove.mock.calls).toHaveLength(0);
     });
@@ -560,7 +624,7 @@ describe.skip('remove', () => {
         taskRespositoryMock.get = jest.fn(() => [taskToDelete]);
 
         // act
-        let result = await getService().remove(defaultTask.code);
+        let result = await getService().remove(userNotManager, defaultTask.code);
 
         // assert
         expect(result).toBeFalsy();
@@ -577,11 +641,11 @@ describe.skip('remove', () => {
         // arrange
         const taskToDelete = getClonedTask();
         const expectedErrorMessage = 'task was not removed.'; 
-        taskRespositoryMock.get = jest.fn(() => [taskToDelete]);
-        taskRespositoryMock.remove = jest.fn(() => []);
+        taskRespositoryMock.get = jest.fn(() => taskToDelete);
+        taskRespositoryMock.remove = jest.fn(() => false);
 
         // act
-        let result = await getService().remove(defaultTask.code);
+        let result = await getService().remove(userNotManager, defaultTask.code);
 
         // assert
         expect(result).toBeFalsy();
@@ -597,11 +661,11 @@ describe.skip('remove', () => {
     test('task is removed and returns true', async () => {
         // arrange
         const taskToDelete = getClonedTask();
-        taskRespositoryMock.get = jest.fn(() => [taskToDelete]);
-        taskRespositoryMock.remove = jest.fn(() => [taskToDelete]);
+        taskRespositoryMock.get = jest.fn(() => taskToDelete);
+        taskRespositoryMock.remove = jest.fn(() => true);
 
         // act
-        let result = await getService().remove(defaultTask.code);
+        let result = await getService().remove(userNotManager, defaultTask.code);
 
         // assert
         expect(result).toBeTruthy();

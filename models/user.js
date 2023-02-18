@@ -10,7 +10,7 @@ class User {
 
     setRole(userRole) {
         this.userRole = userRole;
-        this.isManager = userRole.description == 'Manager'
+        this.isManager = userRole.description == 'Manager';
     }
 
     static map(dbUserObjectArray) {

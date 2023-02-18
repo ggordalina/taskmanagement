@@ -1,4 +1,4 @@
-const taskService = (repository, logger, currentUser) => {
+const taskService = (repository, logger) => {
     if (!repository) {
         throw new Error('repository cannot be empty.');
     }
@@ -7,11 +7,11 @@ const taskService = (repository, logger, currentUser) => {
         throw new Error('logger cannot be empty.');
     }
 
-    if (!currentUser) {
-        throw new Error('currentUser cannot be empty.');
-    }
+    const list = async (currentUser) => {
+        if (!currentUser) {
+            throw new Error('currentUser cannot be null.');
+        }
 
-    const list = async () => {
         try {
             return currentUser.isManager
                 ? await repository.list()
@@ -23,20 +23,24 @@ const taskService = (repository, logger, currentUser) => {
         }
     }
 
-    const get = async (taskCode) => {
+    const get = async (currentUser, taskCode) => {
+        if (!currentUser) {
+            throw new Error('currentUser cannot be null.');
+        }
+
         if (!taskCode) {
             throw new Error('taskCode cannot be empty.');
         }
 
         try {
-            let result = await repository.get(taskCode);
-            if (result?.length <= 0) {
+            let task = await repository.get(taskCode);
+            if (!task) {
+                logger.warning('task was not found:', taskCode);
                 return null;
             }
 
-            let task = result[0];
             if (!currentUser.isManager && task.userId != currentUser.id) {
-                logger.warning('retrival task attempt on authorized user.', currentUser.id);
+                logger.warning('retrival task attempt on unauthorized user.', currentUser.id);
                 return null;
             }
             
@@ -51,13 +55,17 @@ const taskService = (repository, logger, currentUser) => {
         }
     };
     
-    const create = async (task) => {
+    const create = async (currentUser, task) => {
+        if (!currentUser) {
+            throw new Error('currentUser cannot be null.');
+        }
+        
         if (!task) {
             throw new Error('task object cannot be empty.');
         }
     
         try {
-            let taskExists = (await repository.get(task.code))?.length > 0;
+            let taskExists = await repository.get(task.code);
             if (taskExists) {
                 logger.error('task.code must be unique.');
                 return null;
@@ -80,15 +88,23 @@ const taskService = (repository, logger, currentUser) => {
     };
     
     // TODO: possible issue: cannot diferenciate between task does not exist and general update error
-    const update = async (task) => {
+    const update = async (currentUser, taskCode, task) => {
+        if (!currentUser) {
+            throw new Error('currentUser cannot be null.');
+        }
+        
+        if (!taskCode) {
+            throw new Error('taskCode cannot be empty.');
+        }
+        
         if (!task) {
             throw new Error('task object cannot be null.');
         }
     
         try {
-            let taskToUpdate = (await repository.get(task.code))?.[0];
+            let taskToUpdate = await repository.get(taskCode);
             if (!taskToUpdate) { 
-                logger.error('task does not exist.');
+                logger.error('task does not exist:', taskCode);
                 return false;
             }
 
@@ -102,9 +118,9 @@ const taskService = (repository, logger, currentUser) => {
                 return false
             }
 
-            let updated = (await repository.update(task.code, task)).length > 0;
+            let updated = await repository.update(task.code, task);
             if (!updated) {
-                logger.warning('task was not updated.');
+                logger.warning('task was not updated:', taskToUpdate.code);
             }
 
             return updated;
@@ -114,15 +130,19 @@ const taskService = (repository, logger, currentUser) => {
         }
     };
     
-    const remove = async (taskCode) => {
+    const remove = async (currentUser, taskCode) => {
+        if (!currentUser) {
+            throw new Error('currentUser cannot be null.');
+        }
+        
         if (!taskCode) {
-            throw new Error('taskCode cannot be null');
+            throw new Error('taskCode cannot be null.');
         }
     
         try {
-            let taskToDelete = (await repository.get(taskCode))?.[0];
+            let taskToDelete = await repository.get(taskCode);
             if (!taskToDelete) {
-                logger.error('task does not exist.');
+                logger.error('task does not exist:', taskCode);
                 return false;
             }
 
@@ -131,9 +151,9 @@ const taskService = (repository, logger, currentUser) => {
                 return false;
             }
     
-            let removed = (await repository.remove(taskCode)).length > 0;
+            let removed = await repository.remove(taskCode);
             if (!removed) {
-                logger.warning('task was not removed.');
+                logger.warning('task was not removed.', taskToDelete.code);
             }
 
             return removed;
