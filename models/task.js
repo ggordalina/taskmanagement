@@ -1,6 +1,5 @@
 class Task {
-    constructor(id, code, summary, hasSensitiveData, closedDate, userId) {
-        this.id = id;
+    constructor(code, summary, hasSensitiveData, closedDate, userId) {
         this.code = code;
         this.summary = summary;
         this.hasSensitiveData = hasSensitiveData;
@@ -15,6 +14,12 @@ class Task {
     isClosed() {
         return this.closedDate != null;
     }
+
+    static map(dbTaskObjectArray) {
+        return dbTaskObjectArray.map((obj) =>
+            new Task(obj.Code, obj.Summary, obj.HasSensitiveData, obj.ClosedDate, obj.UserId));
+    }
+        
 }
 
 module.exports = Task;
