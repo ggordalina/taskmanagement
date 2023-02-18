@@ -1,14 +1,16 @@
 class User {
-    constructor (id, employeeId, name, userRoleId) {
+    constructor (id, employeeNumber, name, userRoleId) {
         this.id = id;
-        this.employeeId = employeeId;
+        this.employeeNumber = employeeNumber;
         this.name = name;
         this.userRoleId = userRoleId;
         this.isManager = false;
+        this.userRole = null;
     }
 
-    setIsManager(userRole) {
-        this.isManager = userRole.description == 'Manager';
+    setRole(userRole) {
+        this.userRole = userRole;
+        this.isManager = userRole.description == 'Manager'
     }
 }
 
