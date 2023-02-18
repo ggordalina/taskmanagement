@@ -1,4 +1,8 @@
 const taskRespository = (dbConnection) => {
+    if (!dbConnection) {
+        throw new Error('dbConnection cannot be empty.');
+    }
+
     const list = async () => {
         let sqlQuery = 'SELECT * FROM `Task`';
         return await dbConnection.execute(sqlQuery);

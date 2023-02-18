@@ -1,4 +1,8 @@
 const userRepository = (dbConnection) => {
+    if (!dbConnection) {
+        throw new Error('dbConnection cannot be empty.');
+    }
+    
     const getByEmployeeNumber = async (employeeNumber) => {
         if (!employeeNumber) {
             throw new Error("employeeNumber cannot be empty.");

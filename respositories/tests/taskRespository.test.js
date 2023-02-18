@@ -1,6 +1,22 @@
 const connectionMock = jest.createMockFromModule('../../database/connection');
 const taskRespository = require('../taskRespository');
 
+describe('parameters', () => {
+   test.each([
+      null,
+      undefined
+   ])('dbConnection is invalid', (dbConnection) => {
+      // arrange
+      const expectError = new Error('dbConnection cannot be empty.');
+      
+      // act
+      let func = () => taskRespository(dbConnection);
+
+      // act & assert
+      expect(func).toThrow(expectError);
+   })
+});
+
 describe('list', () => {
    test('database connection fails', async () => {
       // arrange

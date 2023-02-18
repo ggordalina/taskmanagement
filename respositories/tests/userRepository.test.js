@@ -1,6 +1,22 @@
 const connectionMock = jest.createMockFromModule('../../database/connection');
 const userRepository = require('../userRepository');
 
+describe('parameters', () => {
+   test.each([
+      null,
+      undefined
+   ])('dbConnection is invalid', (dbConnection) => {
+      // arrange
+      const expectError = new Error('dbConnection cannot be empty.');
+      
+      // act
+      let func = () => userRepository(dbConnection);
+
+      // act & assert
+      expect(func).toThrow(expectError);
+   })
+});
+
 describe('getByEmployeeNumber', () => {
     test.each([
         null,

@@ -1,4 +1,8 @@
 const userRoleRepository = (dbConnection) => {
+    if (!dbConnection) {
+        throw new Error('dbConnection cannot be empty.');
+    }
+    
     const get = async (userRoleId) => {
         if (!userRoleId){
             throw new Error("userRoleId cannot be empty.");
