@@ -1,4 +1,16 @@
 const taskService = (repository, logger, currentUser) => {
+    if (!repository) {
+        throw new Error('repository cannot be empty.');
+    }
+
+    if (!logger) {
+        throw new Error('logger cannot be empty.');
+    }
+
+    if (!currentUser) {
+        throw new Error('currentUser cannot be empty.');
+    }
+
     const list = async () => {
         try {
             return currentUser.isManager
@@ -6,7 +18,7 @@ const taskService = (repository, logger, currentUser) => {
                 : await repository.listByUserId(currentUser.id);
         }
         catch (error) {
-            logger.error('error retriving tasks:', error);
+            logger.error('error retrieving tasks:', error);
             return [];
         }
     }
@@ -34,7 +46,7 @@ const taskService = (repository, logger, currentUser) => {
 
             return task;
         } catch (error) {
-            logger.error('error retriving task:', error);
+            logger.error('error retrieving task:', error);
             return null;
         }
     };

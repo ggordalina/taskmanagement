@@ -4,3 +4,5 @@ class UserRole {
         this.description = description;
     }
 }
+
+module.exports = UserRole;

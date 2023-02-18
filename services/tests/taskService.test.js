@@ -2,11 +2,12 @@ const taskRespositoryMock = jest.createMockFromModule('../../respositories/taskR
 const loggerMock = jest.createMockFromModule('../../logger/logger');
 const taskService = require('../taskService');
 const User = require('../../models/user');
+const UserRole = require('../../models/userRole');
 const Task = require('../../models/task');
 
 const userNotManager = new User('341', '9988', 'Clive', '0987');
 const userManager = new User('1234', '12312', 'James', '1234');
-userManager.setIsManager({ description: 'Manager' });
+userManager.setRole(new UserRole('123', 'Manager'));
 const defaultTask = new Task('123', 'pid-7788', 'simple', false, null, userNotManager.id);
 
 getService = (user = null) => taskService(taskRespositoryMock, loggerMock, user ?? userNotManager);
@@ -32,11 +33,55 @@ beforeEach(() => {
     taskRespositoryMock.remove = jest.fn(() => { });
 });
 
+describe('service parameters', () => {
+    test.each([
+        null, 
+        undefined
+    ])('repository is invalid', (repository) => {
+        // arrange
+        const expectError = new Error('repository cannot be empty.');
+        
+        // act
+        let func = () => taskService(repository, loggerMock, userManager);
+
+        // act & assert
+        expect(func).toThrow(expectError);
+    });
+
+    test.each([
+        null, 
+        undefined
+    ])('logger is invalid', (logger) => {
+        // arrange
+        const expectError = new Error('logger cannot be empty.');
+        
+        // act
+        let func = () => taskService(taskRespositoryMock, logger, userManager);
+
+        // act & assert
+        expect(func).toThrow(expectError);
+    });
+
+    test.each([
+        null, 
+        undefined
+    ])('currentUser is invalid', (currentUser) => {
+        // arrange
+        const expectError = new Error('currentUser cannot be empty.');
+        
+        // act
+        let func = () => taskService(taskRespositoryMock, loggerMock, currentUser);
+
+        // act & assert
+        expect(func).toThrow(expectError);
+    });
+});
+
 describe('list', () => {
     describe('user is manager', () => {
         test('repository throws error and returns empty array', async () => {
             // arrange 
-            const expectedErrorMessage = 'error retriving tasks:';
+            const expectedErrorMessage = 'error retrieving tasks:';
             const expectedError = new Error('error in repo.');
             taskRespositoryMock.list = jest.fn().mockRejectedValue(expectedError);
 
@@ -68,7 +113,7 @@ describe('list', () => {
     describe('user is not manager', () => {
         test('repository throws error and returns empty array', async () => {
             // arrange 
-            const expectedErrorMessage = 'error retriving tasks:';
+            const expectedErrorMessage = 'error retrieving tasks:';
             const expectedError = new Error('error in repo.');
             taskRespositoryMock.listByUserId = jest.fn().mockRejectedValue(expectedError);
 
@@ -115,7 +160,7 @@ describe('get', () => {
 
     test('repository throws error and returns null', async () => {
         // arrange
-        const expectedErrorMessage = 'error retriving task:';
+        const expectedErrorMessage = 'error retrieving task:';
         const expectedError = new Error('error in repo.');
         taskRespositoryMock.get = jest.fn().mockRejectedValue(expectedError);
 
