@@ -1,6 +1,7 @@
 const userRespositoryMock = jest.createMockFromModule('../../respositories/userRepository');
 const userRoleRespositoryMock = jest.createMockFromModule('../../respositories/userRoleRepository');
 const loggerMock = jest.createMockFromModule('../../logger/logger');
+const { AppError, ApplicationExceptions } = require('../../utils/applicationExceptions');
 const userService = require('../userService');
 const User = require('../../models/user');
 const UserRole = require('../../models/userRole');
@@ -81,13 +82,15 @@ describe('get', () => {
         // arrange
         const expectedErrorMessage = 'error retrieving user:';
         const expectedError = new Error('error in repo.');
+        const expectedAppError = new AppError(ApplicationExceptions.DataAccess, 'error retrieving user');
+        const expectedResult = [expectedAppError, null];
         userRespositoryMock.getByEmployeeNumber = jest.fn().mockRejectedValue(expectedError);
 
         // act
         let result = await getService().get(defaultUser.employeeNumber);
 
         // assert
-        expect(result).toBeNull();
+        expect(result).toEqual(expectedResult);
         expect(userRespositoryMock.getByEmployeeNumber.mock.calls).toHaveLength(1);
         expect(userRespositoryMock.getByEmployeeNumber.mock.calls[0][0]).toBe(defaultUser.employeeNumber);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -99,13 +102,15 @@ describe('get', () => {
     test('user does not exist and returns null', async () => {
         // arrange
         const expectedErrorMessage = 'user does not exist:';
+        const expectedAppError = new AppError(ApplicationExceptions.UserNotFound, 'user does not exist');
+        const expectedResult = [expectedAppError, null];
         userRespositoryMock.getByEmployeeNumber = jest.fn(() => null);
 
         // act
         let result = await getService().get(defaultUser.employeeNumber);
 
         // assert
-        expect(result).toBeNull();
+        expect(result).toEqual(expectedResult);
         expect(userRespositoryMock.getByEmployeeNumber.mock.calls).toHaveLength(1);
         expect(userRespositoryMock.getByEmployeeNumber.mock.calls[0][0]).toBe(defaultUser.employeeNumber);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -117,6 +122,8 @@ describe('get', () => {
     test('user role does not exist and returns null', async () => {
         // arrange
         const expectedErrorMessage = `unable to identify user's ${defaultUser.employeeNumber} role:`;
+        const expectedAppError = new AppError(ApplicationExceptions.UserNotFound, 'user does not exist');
+        const expectedResult = [expectedAppError, null];
         userRespositoryMock.getByEmployeeNumber = jest.fn(() => defaultUser);
         userRoleRespositoryMock.get = jest.fn(() => null);
 
@@ -124,7 +131,7 @@ describe('get', () => {
         let result = await getService().get(defaultUser.employeeNumber);
 
         // assert
-        expect(result).toBeNull();
+        expect(result).toEqual(expectedResult);
         expect(userRespositoryMock.getByEmployeeNumber.mock.calls).toHaveLength(1);
         expect(userRespositoryMock.getByEmployeeNumber.mock.calls[0][0]).toBe(defaultUser.employeeNumber);
         expect(userRoleRespositoryMock.get.mock.calls).toHaveLength(1);
@@ -139,6 +146,7 @@ describe('get', () => {
         const clonedUser = new User(defaultUser.id, defaultUser.employeeNumber, defaultUser.name, defaultUser.userRoleId);
         const expectedUser = new User(defaultUser.id, defaultUser.employeeNumber, defaultUser.name, defaultUser.userRoleId);
         expectedUser.setRole(defaultUserRole);
+        const expectedResult = [null, expectedUser];
         userRespositoryMock.getByEmployeeNumber = jest.fn(() => clonedUser);
         userRoleRespositoryMock.get = jest.fn(() => defaultUserRole);
 
@@ -146,7 +154,7 @@ describe('get', () => {
         let result = await getService().get(defaultUser.employeeNumber);
 
         // assert
-        expect(result).toEqual(expectedUser);
+        expect(result).toEqual(expectedResult);
         expect(userRespositoryMock.getByEmployeeNumber.mock.calls).toHaveLength(1);
         expect(userRespositoryMock.getByEmployeeNumber.mock.calls[0][0]).toBe(defaultUser.employeeNumber);
         expect(userRoleRespositoryMock.get.mock.calls).toHaveLength(1);
