@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const tasksRouter = require('./http/tasks-routing');
+const webApi = require('./web-api/webApi');
 
 const app = express();
 const port = process.env.APP_PORT;
@@ -14,8 +14,8 @@ app.use((_, response, next) => {
     next();
 });
 
-// Application routes
-app.use('/task', tasksRouter)
+// Web Application Layer
+webApi(app);
 
 //If everything fails
 app.get('*', (_, response) => {
