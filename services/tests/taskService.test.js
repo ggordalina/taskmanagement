@@ -1,5 +1,6 @@
 const taskRepositoryMock = jest.createMockFromModule('../../respositories/taskRespository');
 const loggerMock = jest.createMockFromModule('../../logger/logger');
+const { AppError, ApplicationExceptions } = require('../../utils/applicationExceptions');
 const taskService = require('../taskService');
 const User = require('../../models/user');
 const UserRole = require('../../models/userRole');
@@ -41,7 +42,7 @@ describe('parameters', () => {
         const expectError = new Error('repository cannot be empty.');
         
         // act
-        let func = () => taskService(repository, loggerMock, userManager);
+        const func = () => taskService(repository, loggerMock, userManager);
 
         // act & assert
         expect(func).toThrow(expectError);
@@ -55,7 +56,7 @@ describe('parameters', () => {
         const expectError = new Error('logger cannot be empty.');
         
         // act
-        let func = () => taskService(taskRepositoryMock, logger, userManager);
+        const func = () => taskService(taskRepositoryMock, logger, userManager);
 
         // act & assert
         expect(func).toThrow(expectError);
@@ -80,13 +81,15 @@ describe('list', () => {
             // arrange 
             const expectedErrorMessage = 'error retrieving tasks:';
             const expectedError = new Error('error in repo.');
+            const expectedAppError = new AppError(ApplicationExceptions.DataAccess, 'error retrieving tasks');
+            const expectedResult = [expectedAppError, null];
             taskRepositoryMock.list = jest.fn().mockRejectedValue(expectedError);
 
             // act
-            let result = await getService().list(userManager);
+            const result = await getService().list(userManager);
 
             // assert
-            expect(result).toHaveLength(0);
+            expect(result).toEqual(expectedResult);
             expect(taskRepositoryMock.list.mock.calls).toHaveLength(1);
             expect(loggerMock.error.mock.calls).toHaveLength(1);
             expect(loggerMock.error.mock.calls[0][0]).toBe(expectedErrorMessage);
@@ -95,13 +98,14 @@ describe('list', () => {
 
         test('repository returns content and returns its content', async () => {
             // arrange 
+            const expectedResult = [null, [defaultTask]];
             taskRepositoryMock.list = jest.fn(() => [defaultTask]);
 
             // act
-            let result = await getService().list(userManager);
+            const result = await getService().list(userManager);
 
             // assert
-            expect(result).toEqual([defaultTask]);
+            expect(result).toEqual(expectedResult);
             expect(taskRepositoryMock.list.mock.calls).toHaveLength(1);
             expect(loggerMock.error.mock.calls).toHaveLength(0);
         });
@@ -112,13 +116,15 @@ describe('list', () => {
             // arrange 
             const expectedErrorMessage = 'error retrieving tasks:';
             const expectedError = new Error('error in repo.');
+            const expectedAppError = new AppError(ApplicationExceptions.DataAccess, 'error retrieving tasks');
+            const expectedResult = [expectedAppError, null];
             taskRepositoryMock.listByUserId = jest.fn().mockRejectedValue(expectedError);
 
             // act
-            let result = await getService().list(userNotManager);
+            const result = await getService().list(userNotManager);
 
             // assert
-            expect(result).toEqual([]);
+            expect(result).toEqual(expectedResult);
             expect(taskRepositoryMock.listByUserId.mock.calls).toHaveLength(1);
             expect(taskRepositoryMock.listByUserId.mock.calls[0][0]).toBe(userNotManager.id);
             expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -128,13 +134,14 @@ describe('list', () => {
 
         test('repository returns content and returns its content', async () => {
             // arrange 
+            const expectedResult = [null, [defaultTask]];
             taskRepositoryMock.listByUserId = jest.fn(() => [defaultTask]);
 
             // act
-            let result = await getService().list(userNotManager);
+            const result = await getService().list(userNotManager);
 
             // assert
-            expect(result).toEqual([defaultTask]);
+            expect(result).toEqual(expectedResult);
             expect(taskRepositoryMock.listByUserId.mock.calls).toHaveLength(1);
             expect(taskRepositoryMock.listByUserId.mock.calls[0][0]).toBe(userNotManager.id);
             expect(loggerMock.error.mock.calls).toHaveLength(0);
@@ -171,13 +178,15 @@ describe('get', () => {
         // arrange
         const expectedErrorMessage = 'error retrieving task:';
         const expectedError = new Error('error in repo.');
+        const expectedAppError = new AppError(ApplicationExceptions.DataAccess, 'error retrieving task');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn().mockRejectedValue(expectedError);
 
         // act
-        let result = await getService().get(userNotManager, defaultTask.code);
+        const result = await getService().get(userNotManager, defaultTask.code);
 
         // assert
-        expect(result).toBeNull();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -189,13 +198,15 @@ describe('get', () => {
     test('repository returns empty result and returns null', async () => {
         // arrange
         const expectedErrorMessage = 'task was not found:';
+        const expectedAppError = new AppError(ApplicationExceptions.TaskNotFound, 'task was not found');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn(() => null);
 
         // act
-        let result = await getService().get(userManager, defaultTask.code);
+        const result = await getService().get(userManager, defaultTask.code);
 
         // assert
-        expect(result).toBeNull();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.warning.mock.calls).toHaveLength(1);
@@ -206,14 +217,15 @@ describe('get', () => {
 
     test('user is manager and task does not belong to user and returns task', async () => {
         // arrage
-        let task = getClonedTask();
+        const task = getClonedTask();
+        const expectedResult = [null, task];
         taskRepositoryMock.getByCode = jest.fn(() => task);
 
         // act
-        let result = await getService().get(userManager, task.code);
+        const result = await getService().get(userManager, task.code);
 
         // assert
-        expect(result).toEqual(task);
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(task.code);
         expect(loggerMock.error.mock.calls).toHaveLength(0);
@@ -222,18 +234,20 @@ describe('get', () => {
 
     test('task does not belong to user and returns null', async () => {
         // arrange
-        const expectedResult = getClonedTask();
-        expectedResult.userId = '4444';
+        const task = getClonedTask();
+        task.userId = '4444';
         const expectedWarningMessage = 'retrival task attempt on unauthorized user.';
-        taskRepositoryMock.getByCode = jest.fn(() => [expectedResult]);
+        const expectedAppError = new AppError(ApplicationExceptions.TaskNotFound, 'task was not found');
+        const expectedResult = [expectedAppError, null];
+        taskRepositoryMock.getByCode = jest.fn(() => task);
 
         // act
-        let result = await getService().get(userNotManager, expectedResult.code);
+        const result = await getService().get(userNotManager, task.code);
 
         // assert
-        expect(result).toBeNull();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
-        expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(expectedResult.code);
+        expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(task.code);
         expect(loggerMock.warning.mock.calls).toHaveLength(1);
         expect(loggerMock.warning.mock.calls[0][0]).toBe(expectedWarningMessage);
         expect(loggerMock.warning.mock.calls[0][1]).toBe(userNotManager.id);
@@ -243,18 +257,19 @@ describe('get', () => {
     test('task has sensitive date and its summary gets obfuscated', async () => {
         // arrange
         const expectedObfuscatedMessage = 'This content cannot be diplayed because it contains sensitive data.';
-        const expectedResult = getClonedTask();
-        expectedResult.hasSensitiveData = true;
-        expectedResult.summary = expectedObfuscatedMessage;
-        taskRepositoryMock.getByCode = jest.fn(() => expectedResult);
+        const task = getClonedTask();
+        task.hasSensitiveData = true;
+        task.summary = expectedObfuscatedMessage;
+        const expectedResult = [null, task];
+        taskRepositoryMock.getByCode = jest.fn(() => task);
 
         // act
-        let result = await getService().get(userManager, expectedResult.code);
+        const result = await getService().get(userManager, task.code);
 
         // assert
         expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
-        expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(expectedResult.code);
+        expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(task.code);
         expect(loggerMock.warning.mock.calls).toHaveLength(0);
         expect(loggerMock.error.mock.calls).toHaveLength(0);
     });
@@ -262,13 +277,14 @@ describe('get', () => {
     test('returns valid task', async () => {
         // arrange
         const task = getClonedTask();
+        const expectedResult = [null, task];
         taskRepositoryMock.getByCode = jest.fn(() => task);
 
         // act
-        let result = await getService().get(userManager, task.code);
+        const result = await getService().get(userManager, task.code);
 
         // assert
-        expect(result).toEqual(task);
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(task.code);
         expect(loggerMock.warning.mock.calls).toHaveLength(0);
@@ -307,13 +323,15 @@ describe('create', () => {
         // arrange
         const expectedErrorMessage = 'error saving task:';
         const expectedError = new Error('error in repo.');
+        const expectedAppError = new AppError(ApplicationExceptions.DataAccess, 'error saving task');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn().mockRejectedValue(expectedError);
 
         // act
-        let result = await getService().create(userNotManager, defaultTask);
+        const result = await getService().create(userNotManager, defaultTask);
 
         // assert
-        expect(result).toBeNull();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -325,12 +343,14 @@ describe('create', () => {
     test('task already exists and throws error', async () => {
         // arrange
         const expectedErrorMessage = 'task.code must be unique.';
+        const expectedAppError = new AppError(ApplicationExceptions.TaskAlreadyExists, 'task.code must be unique');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn(() => [defaultTask]);
 
-        let result = await getService().create(userNotManager, defaultTask);
+        const result = await getService().create(userNotManager, defaultTask);
 
         // assert 
-        expect(result).toBeNull();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -346,14 +366,16 @@ describe('create', () => {
         const expectedTaskToCreate = getClonedTask();
         expectedTaskToCreate.closedDate = null;
         const expectedWarningMessage = 'task was not created.';
+        const expectedAppError = new AppError(ApplicationExceptions.DataAccess, 'task was not created');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn(() => null);
         taskRepositoryMock.create = jest.fn(() => false);
 
         // act
-        let result = await getService().create(userNotManager, task);
+        const result = await getService().create(userNotManager, task);
 
         // assert
-        expect(result).toBeNull();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(task.code);
         expect(taskRepositoryMock.create.mock.calls).toHaveLength(1);
@@ -369,14 +391,15 @@ describe('create', () => {
         task.userId = null;
         const expectedTaskToCreate = getClonedTask();
         expectedTaskToCreate.closedDate = null;
+        const expectedResult = [null, task];
         taskRepositoryMock.getByCode = jest.fn(() => null);
         taskRepositoryMock.create = jest.fn(() => true);
 
         // act
-        let result = await getService().create(userNotManager, task);
+        const result = await getService().create(userNotManager, task);
 
         // assert
-        expect(result).toEqual(expectedTaskToCreate);
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(task.code);
         expect(taskRepositoryMock.create.mock.calls).toHaveLength(1);
@@ -430,13 +453,15 @@ describe('update', () => {
         // arrange
         const expectedErrorMessage = 'error updating task:';
         const expectedError = new Error('error in repo.');
+        const expectedAppError = new AppError(ApplicationExceptions.DataAccess, 'error updating task');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn().mockRejectedValue(expectedError);
 
         // act
-        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
+        const result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
-        expect(result).toBeFalsy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -449,13 +474,15 @@ describe('update', () => {
     test('task does not exist and returns false', async () => {
         // arrange
         const expectedErrorMessage = 'task does not exist:';
+        const expectedAppError = new AppError(ApplicationExceptions.TaskNotFound, 'task does not exist');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn(() => null);
 
         // act
-        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
+        const result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
-        expect(result).toBeFalsy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -470,13 +497,15 @@ describe('update', () => {
         const taskToUpdate = getClonedTask();
         taskToUpdate.userId = '4444';
         const expectedErrorMessage = 'attempt to update other user\' task:';
+        const expectedAppError = new AppError(ApplicationExceptions.TaskNotFound, 'task does not exist');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn(() => taskToUpdate);
 
         // act
-        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
+        const result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
-        expect(result).toBeFalsy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -491,13 +520,15 @@ describe('update', () => {
         const taskToUpdate = getClonedTask();
         taskToUpdate.closedDate = new Date();
         const expectedErrorMessage = 'a closed task cannot be updated:';
+        const expectedAppError = new AppError(ApplicationExceptions.TaskAlreadyExists, 'a closed task cannot be updated');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn(() => taskToUpdate);
 
         // act
-        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
+        const result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
-        expect(result).toBeFalsy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -511,14 +542,16 @@ describe('update', () => {
         // arrange
         const taskToUpdate = getClonedTask();
         const expectedErrorMessage = 'task was not updated:'; 
+        const expectedAppError = new AppError(ApplicationExceptions.DataAccess, 'task was not updated');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn(() => taskToUpdate);
         taskRepositoryMock.update = jest.fn(() => false);
 
         // act
-        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
+        const result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
-        expect(result).toBeFalsy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(taskRepositoryMock.update.mock.calls).toHaveLength(1);
@@ -532,14 +565,15 @@ describe('update', () => {
     test('task is updated and returns true', async () => {
         // arrange
         const taskToUpdate = getClonedTask();
+        const expectedResult = [null, true];
         taskRepositoryMock.getByCode = jest.fn(() => taskToUpdate);
         taskRepositoryMock.update = jest.fn(() => true);
 
         // act
-        let result = await getService().update(userNotManager, defaultTask.code, defaultTask);
+        const result = await getService().update(userNotManager, defaultTask.code, defaultTask);
 
         // assert
-        expect(result).toBeTruthy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(taskRepositoryMock.update.mock.calls).toHaveLength(1);
@@ -581,13 +615,15 @@ describe('remove', () => {
         // arrange
         const expectedErrorMessage = 'error removing task:';
         const expectedError = new Error('error in repo.');
+        const expectedAppError = new AppError(ApplicationExceptions.DataAccess, 'error updating task');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn().mockRejectedValue(expectedError);
 
         // act
-        let result = await getService().remove(userNotManager, defaultTask.code);
+        const result = await getService().remove(userNotManager, defaultTask.code);
 
         // assert
-        expect(result).toBeFalsy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -600,13 +636,15 @@ describe('remove', () => {
     test('task does not exist and throws error', async () => {
         // arrange
         const expectedErrorMessage = 'task does not exist:';
+        const expectedAppError = new AppError(ApplicationExceptions.TaskNotFound, 'task does not exist');
+        const expectedResult = [expectedAppError, null];
         taskRepositoryMock.getByCode = jest.fn(() => null);
 
         // act
-        let result = await getService().remove(userNotManager, defaultTask.code);
+        const result = await getService().remove(userNotManager, defaultTask.code);
 
         // assert
-        expect(result).toBeFalsy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -618,16 +656,18 @@ describe('remove', () => {
 
     test('task does not belong to current user and returns false', async () => {
         // arrange
-        const taskToDelete = getClonedTask();
-        taskToDelete.userId = '4444';
+        const taskToDeconste = getClonedTask();
+        taskToDeconste.userId = '4444';
         const expectedErrorMessage = 'attempt to delete other user\' task:';
-        taskRepositoryMock.getByCode = jest.fn(() => [taskToDelete]);
+        const expectedAppError = new AppError(ApplicationExceptions.TaskNotFound, 'task does not exist');
+        const expectedResult = [expectedAppError, null];
+        taskRepositoryMock.getByCode = jest.fn(() => [taskToDeconste]);
 
         // act
-        let result = await getService().remove(userNotManager, defaultTask.code);
+        const result = await getService().remove(userNotManager, defaultTask.code);
 
         // assert
-        expect(result).toBeFalsy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(loggerMock.error.mock.calls).toHaveLength(1);
@@ -639,16 +679,18 @@ describe('remove', () => {
 
     test('task is not removed and returns false', async () => {
         // arrange
-        const taskToDelete = getClonedTask();
+        const taskToDeconste = getClonedTask();
         const expectedErrorMessage = 'task was not removed.'; 
-        taskRepositoryMock.getByCode = jest.fn(() => taskToDelete);
+        const expectedAppError = new AppError(ApplicationExceptions.DataAccess, 'task was not removed');
+        const expectedResult = [expectedAppError, null];
+        taskRepositoryMock.getByCode = jest.fn(() => taskToDeconste);
         taskRepositoryMock.remove = jest.fn(() => false);
 
         // act
-        let result = await getService().remove(userNotManager, defaultTask.code);
+        const result = await getService().remove(userNotManager, defaultTask.code);
 
         // assert
-        expect(result).toBeFalsy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(taskRepositoryMock.remove.mock.calls).toHaveLength(1);
@@ -660,15 +702,16 @@ describe('remove', () => {
 
     test('task is removed and returns true', async () => {
         // arrange
-        const taskToDelete = getClonedTask();
-        taskRepositoryMock.getByCode = jest.fn(() => taskToDelete);
+        const taskToDeconste = getClonedTask();
+        const expectedResult = [null, true];
+        taskRepositoryMock.getByCode = jest.fn(() => taskToDeconste);
         taskRepositoryMock.remove = jest.fn(() => true);
 
         // act
-        let result = await getService().remove(userNotManager, defaultTask.code);
+        const result = await getService().remove(userNotManager, defaultTask.code);
 
         // assert
-        expect(result).toBeTruthy();
+        expect(result).toEqual(expectedResult);
         expect(taskRepositoryMock.getByCode.mock.calls).toHaveLength(1);
         expect(taskRepositoryMock.getByCode.mock.calls[0][0]).toBe(defaultTask.code);
         expect(taskRepositoryMock.remove.mock.calls).toHaveLength(1);

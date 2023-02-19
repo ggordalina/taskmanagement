@@ -1,3 +1,5 @@
+const { AppError, ApplicationExceptions } = require('../utils/applicationExceptions');
+
 const userService = (userRepository, userRoleRepository, logger) => {
     if (!userRepository) {
         throw new Error('userRepository cannot be empty.');
@@ -20,20 +22,20 @@ const userService = (userRepository, userRoleRepository, logger) => {
             let user = await userRepository.getByEmployeeNumber(employeeNumber);
             if (!user) {
                 logger.error('user does not exist:', employeeNumber);
-                return null;
+                return [new AppError(ApplicationExceptions.UserNotFound, 'user does not exist'), null];
             }
 
             let userRole = await userRoleRepository.get(user.userRoleId);
             if (!userRole) {
                 logger.error(`unable to identify user's ${employeeNumber} role:`, user.userRoleId);
-                return null;
+                return [new AppError(ApplicationExceptions.UserNotFound, 'user does not exist'), null];
             }
 
             user.setRole(userRole);
-            return user;
+            return [null, user];
         } catch (error) {
             logger.error('error retrieving user:', error);
-            return null;
+            return [new AppError(ApplicationExceptions.DataAccess, 'error retrieving user'), null];
         }
     };
 
