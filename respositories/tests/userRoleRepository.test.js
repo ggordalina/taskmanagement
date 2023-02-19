@@ -33,7 +33,7 @@ describe('get', () => {
         undefined
      ])('userRoleId is invalid and throws error', async (userRoleId) => {
         // arrange
-        const expectError = new Error("userRoleId cannot be empty.");
+        const expectError = new Error('id cannot be empty.');
         
         // act & assert
         await expect(userRoleRepository(connectionMock).get(userRoleId)).rejects.toEqual(expectError);
