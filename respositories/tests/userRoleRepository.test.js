@@ -33,7 +33,7 @@ describe('get', () => {
         undefined
      ])('userRoleId is invalid and throws error', async (userRoleId) => {
         // arrange
-        const expectError = new Error("userRoleId cannot be empty.");
+        const expectError = new Error('id cannot be empty.');
         
         // act & assert
         await expect(userRoleRepository(connectionMock).get(userRoleId)).rejects.toEqual(expectError);
@@ -43,7 +43,7 @@ describe('get', () => {
      test('database connection fails and throws error', async () => {
         // arrange
         const userRoleId = '542245';
-        const expectedSqlQuery = `SELECT ${userRoleTableCollumns} FROM UserRole WHERE Id = ?`;
+        const expectedSqlQuery = `SELECT ${userRoleTableCollumns} FROM UserRole WHERE Id = UUID_TO_BIN(?)`;
         const expectedParams = [userRoleId];
         const expectedError = new Error('Error in database.');
         connectionMock.execute = jest.fn().mockRejectedValue(expectedError);
@@ -58,7 +58,7 @@ describe('get', () => {
       test('database does not return data returns null', async () => {
          // arrange
          const userRoleId = '542245';
-         const expectedSqlQuery = `SELECT ${userRoleTableCollumns} FROM UserRole WHERE Id = ?`;
+         const expectedSqlQuery = `SELECT ${userRoleTableCollumns} FROM UserRole WHERE Id = UUID_TO_BIN(?)`;
          const expectedParams = [userRoleId];
          connectionMock.execute = jest.fn(() => []);
          
@@ -77,7 +77,7 @@ describe('get', () => {
          const userRoleId = '542245';
          const dbData = [{ Id: '1', Description: 'Manager' }];
          const expectedData = UserRole.map(dbData)[0];
-         const expectedSqlQuery = `SELECT ${userRoleTableCollumns} FROM UserRole WHERE Id = ?`;
+         const expectedSqlQuery = `SELECT ${userRoleTableCollumns} FROM UserRole WHERE Id = UUID_TO_BIN(?)`;
          const expectedParams = [userRoleId];
          connectionMock.execute = jest.fn(() => dbData);
          

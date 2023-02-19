@@ -40,7 +40,7 @@ const taskRespository = (dbConnection) => {
         return Task.map(result);
     };
     
-    const get = async (taskCode) => {
+    const getByCode = async (taskCode) => {
         if (!taskCode) {
             throw new Error('taskCode cannot be empty.');
         }
@@ -63,7 +63,7 @@ const taskRespository = (dbConnection) => {
     
         let sqlQuery = 'INSERT INTO Task (Code, Summary, HasSensitiveData, UserId) '; 
         sqlQuery += 'VALUES (?, ?, ?, UUID_TO_BIN(?))';
-        let params = [task.code, task.summary, task.hasSensitiveData, task.userId];
+        let params = [task.code, task.summary || null, task.hasSensitiveData | 0, task.userId];
     
         let result = await dbConnection.execute(sqlQuery, params);
         return result?.affectedRows > 0;
@@ -81,8 +81,8 @@ const taskRespository = (dbConnection) => {
         let sqlQuery = 'UPDATE Task ';
         sqlQuery += 'SET Summary = ?, HasSensitiveData = ?, ClosedDate = ? ';
         sqlQuery += 'WHERE Code = ?';
-        let params = [task.summary, task.hasSensitiveData, task.closedDate, task.code];
-    
+        let params = [task.summary || null, task.hasSensitiveData | 0, task.closedDate || null, taskCode];
+
         let result = await dbConnection.execute(sqlQuery, params);
         return result?.affectedRows > 0;
     };
@@ -99,7 +99,7 @@ const taskRespository = (dbConnection) => {
         return result?.affectedRows > 0;
     };
 
-    return { list, listByUserId, get, create, update, remove };
+    return { list, listByUserId, getByCode, create, update, remove };
 };
 
 module.exports = taskRespository;

@@ -10,13 +10,13 @@ const userRoleRepository = (dbConnection) => {
         'Description'
     ];
     
-    const get = async (userRoleId) => {
-        if (!userRoleId){
-            throw new Error("userRoleId cannot be empty.");
+    const get = async (id) => {
+        if (!id){
+            throw new Error('id cannot be empty.');
         }
 
-        let sqlQuery = `SELECT ${userRoleTableCollumns} FROM UserRole WHERE Id = ?`;
-        let params = [userRoleId];
+        let sqlQuery = `SELECT ${userRoleTableCollumns} FROM UserRole WHERE Id = UUID_TO_BIN(?)`;
+        let params = [id];
     
         let result = await dbConnection.execute(sqlQuery, params);
         if (result?.length <= 0) {

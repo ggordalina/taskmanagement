@@ -148,7 +148,7 @@ describe('list by user id', () => {
    });
 });
 
-describe('get', () => {
+describe('getByCode', () => {
    test.each([
       null,
       undefined
@@ -157,7 +157,7 @@ describe('get', () => {
       const expectError = new Error('taskCode cannot be empty.');
       
       // act & assert
-      await expect(taskRespository(connectionMock).get(taskCode)).rejects.toEqual(expectError);
+      await expect(taskRespository(connectionMock).getByCode(taskCode)).rejects.toEqual(expectError);
       expect(connectionMock.execute.mock.calls).toHaveLength(0);
    });
 
@@ -170,7 +170,7 @@ describe('get', () => {
       connectionMock.execute = jest.fn().mockRejectedValue(expectedError);
 
       // act & assert
-      await expect(taskRespository(connectionMock).get(taskCode)).rejects.toEqual(expectedError);
+      await expect(taskRespository(connectionMock).getByCode(taskCode)).rejects.toEqual(expectedError);
       expect(connectionMock.execute.mock.calls).toHaveLength(1);
       expect(connectionMock.execute.mock.calls[0][0]).toBe(expectedSqlQuery);
       expect(connectionMock.execute.mock.calls[0][1]).toEqual(expectedParams);
@@ -184,7 +184,7 @@ describe('get', () => {
       connectionMock.execute = jest.fn(() => []);
       
       // act
-      let result = await taskRespository(connectionMock).get(taskCode);
+      let result = await taskRespository(connectionMock).getByCode(taskCode);
 
       // assert
       expect(result).toBeNull();
@@ -203,7 +203,7 @@ describe('get', () => {
       connectionMock.execute = jest.fn(() => dbData);
       
       // act
-      let result = await taskRespository(connectionMock).get(taskCode);
+      let result = await taskRespository(connectionMock).getByCode(taskCode);
 
       // assert
       expect(result).toEqual(expectedData);
