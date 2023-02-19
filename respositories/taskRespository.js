@@ -40,7 +40,7 @@ const taskRespository = (dbConnection) => {
         return Task.map(result);
     };
     
-    const get = async (taskCode) => {
+    const getByCode = async (taskCode) => {
         if (!taskCode) {
             throw new Error('taskCode cannot be empty.');
         }
@@ -99,7 +99,7 @@ const taskRespository = (dbConnection) => {
         return result?.affectedRows > 0;
     };
 
-    return { list, listByUserId, get, create, update, remove };
+    return { list, listByUserId, getByCode, create, update, remove };
 };
 
 module.exports = taskRespository;
