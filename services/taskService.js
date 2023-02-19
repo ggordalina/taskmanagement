@@ -33,7 +33,7 @@ const taskService = (repository, logger) => {
         }
 
         try {
-            let task = await repository.get(taskCode);
+            let task = await repository.getByCode(taskCode);
             if (!task) {
                 logger.warning('task was not found:', taskCode);
                 return null;
@@ -65,7 +65,7 @@ const taskService = (repository, logger) => {
         }
     
         try {
-            let taskExists = await repository.get(task.code);
+            let taskExists = await repository.getByCode(task.code);
             if (taskExists) {
                 logger.error('task.code must be unique.');
                 return null;
@@ -102,7 +102,7 @@ const taskService = (repository, logger) => {
         }
     
         try {
-            let taskToUpdate = await repository.get(taskCode);
+            let taskToUpdate = await repository.getByCode(taskCode);
             if (!taskToUpdate) { 
                 logger.error('task does not exist:', taskCode);
                 return false;
@@ -140,7 +140,7 @@ const taskService = (repository, logger) => {
         }
     
         try {
-            let taskToDelete = await repository.get(taskCode);
+            let taskToDelete = await repository.getByCode(taskCode);
             if (!taskToDelete) {
                 logger.error('task does not exist:', taskCode);
                 return false;
