@@ -1,4 +1,4 @@
-const connectionMock = jest.createMockFromModule('../../database/connection');
+const connectionMock = jest.createMockFromModule('../../../database/connection');
 const userRepository = require('../userRepository');
 const User = require('../../models/user');
 

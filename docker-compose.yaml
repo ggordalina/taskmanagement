@@ -13,14 +13,7 @@ services:
       MYSQL_USER: ${DATABASE_USER}
       MYSQL_PASSWORD: ${DATABASE_PASSWORD}
     volumes: 
-        - ./migrations:/docker-entrypoint-initdb.d
-
-  adminer:
-    image: adminer
-    container_name: adminer
-    restart: unless-stopped
-    ports: 
-        - 8080:8080
+        - ./database/migrations:/docker-entrypoint-initdb.d
 
   task-manager:
     build:

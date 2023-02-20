@@ -1,4 +1,4 @@
-const connectionMock = jest.createMockFromModule('../../database/connection');
+const connectionMock = jest.createMockFromModule('../../../database/connection');
 const taskRespository = require('../taskRespository');
 const Task = require('../../models/task');
 
