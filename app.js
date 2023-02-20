@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const webApi = require('./web-api/webApi');
+const webApi = require('./application/webApi');
 
 const app = express();
 const port = process.env.APP_PORT;
