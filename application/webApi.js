@@ -1,13 +1,12 @@
-const { getFormatedResponseBody, mapApplicationErrorToHttpStatusCode } = require('../utils/httpUtils');
 const connection = require('../database/connection');
-const logger = require('../logger/logger');
-const TaskRepository = require('../respositories/taskRespository');
-const UserRepository = require('../respositories/userRepository');
-const UserRoleRepository = require('../respositories/userRoleRepository');
-const TaskService = require('../services/taskService');
-const UserService = require('../services/userService');
-const Middleware = require('./middleware');
-const TasksApi = require('./tasksApi');
+const logger = require('./utils/logger');
+const TaskRepository = require('./respositories/taskRespository');
+const UserRepository = require('./respositories/userRepository');
+const UserRoleRepository = require('./respositories/userRoleRepository');
+const TaskService = require('./services/taskService');
+const UserService = require('./services/userService');
+const Middleware = require('./middlewares/middleware');
+const TasksApi = require('./controllers/tasksApi');
 
 const webApi = (app) => {
     const log = logger();

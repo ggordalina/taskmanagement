@@ -1,6 +1,6 @@
 const userRespositoryMock = jest.createMockFromModule('../../respositories/userRepository');
 const userRoleRespositoryMock = jest.createMockFromModule('../../respositories/userRoleRepository');
-const loggerMock = jest.createMockFromModule('../../logger/logger');
+const loggerMock = jest.createMockFromModule('../../utils/logger');
 const { AppError, ApplicationExceptions } = require('../../utils/applicationExceptions');
 const userService = require('../userService');
 const User = require('../../models/user');
