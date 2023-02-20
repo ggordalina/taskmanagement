@@ -1,4 +1,4 @@
-const connection = require('../database/connection');
+const connection = require('./utils/connection');
 const logger = require('./utils/logger');
 const TaskRepository = require('./respositories/taskRespository');
 const UserRepository = require('./respositories/userRepository');

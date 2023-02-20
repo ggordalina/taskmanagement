@@ -1,4 +1,5 @@
 const { getFormatedResponseBody, mapApplicationErrorToHttpStatusCode } = require('../utils/httpUtils');
+const broker = require('../notification-centre/broker')();
 const Task = require('../models/task');
 
 const tasksApi = (taskService) => {
@@ -106,9 +107,9 @@ const tasksApi = (taskService) => {
         try {
             const taskCode = request.params.code;
             const currentUser = request.currentUser;
-            const taskToUpdate = { closedDate: new Date() };
+            const closingDate = new Date();
 
-            const [error] = await taskService.update(currentUser, taskCode, taskToUpdate);
+            const [error] = await taskService.update(currentUser, taskCode, { closedDate: closingDate });
             if (error) {
                 response
                     .status(mapApplicationErrorToHttpStatusCode(error.exception))
@@ -116,7 +117,7 @@ const tasksApi = (taskService) => {
                 return;
             }
 
-            console.log(`Task ${taskCode} has been closed by: ${currentUser.name}`); // TODO: change this to event && add unittesting
+            broker.publish('task_op', `Task ${taskCode} has been closed by ${currentUser.name} on ${closingDate.toUTCString()}`);
             response.status(204).send();
         } catch (error) {
             response.status(500).send(getFormatedResponseBody(error, null));

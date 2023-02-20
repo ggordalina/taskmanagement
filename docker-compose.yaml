@@ -22,7 +22,7 @@ services:
     depends_on:
       - mysql
     ports:
-      - ${APP_PORT}:${APP_PORT}
+      - 3000:3000
     environment:
       DATABASE_HOST: ${DATABASE_HOST}
       DATABASE_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD}
@@ -36,3 +36,5 @@ services:
       - 1883:1883
     volumes:
       - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/acl.conf:/mosquitto/config/acl.conf
+      - ./mosquitto/password.txt:/mosquitto/config/password.txt

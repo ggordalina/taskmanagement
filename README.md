@@ -18,9 +18,8 @@ Are you a employee and what to hide what you really do during working hours to y
   - `DATABASE_ROOT_PASSWORD`: Database root password
   - `DATABASE_USER`: Application user for database access
   - `DATABASE_PASSWORD`: Application user's password
-  - `APP_PORT`: Application port
 - Run `docker-compose up -d` to create the database and the application
-- Your application is ready on `http://127.0.0.1:{.env.APP_PORT}`
+- Your application is ready on `http://127.0.0.1:3000`
 
 ## Routes
 - `GET /?employeeId={emploeeNumber}` - List tasks
