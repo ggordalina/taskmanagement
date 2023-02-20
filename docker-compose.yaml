@@ -13,7 +13,7 @@ services:
       MYSQL_USER: ${DATABASE_USER}
       MYSQL_PASSWORD: ${DATABASE_PASSWORD}
     volumes: 
-        - ./database/migrations:/docker-entrypoint-initdb.d
+        - ./migrations:/docker-entrypoint-initdb.d
 
   task-manager:
     build:
@@ -28,3 +28,11 @@ services:
       DATABASE_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD}
       DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}      
+
+  #broker:
+  #  image: eclipse-mosquitto:latest
+  #  container_name: broker
+  #  ports:
+  #    - 1883:1883
+  #  volumes:
+  #    - ./mosquito-settings/mosquitto.conf:/mosquitto/config/mosquitto.conf
