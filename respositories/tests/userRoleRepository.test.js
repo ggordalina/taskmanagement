@@ -1,4 +1,4 @@
-const connectionMock = jest.createMockFromModule('../../../database/connection');
+const connectionMock = jest.createMockFromModule('../../database/connection');
 const userRoleRepository = require('../userRoleRepository');
 const UserRole = require('../../models/userRole');
 
