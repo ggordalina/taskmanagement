@@ -1,5 +1,5 @@
 const taskRepositoryMock = jest.createMockFromModule('../../respositories/taskRespository');
-const loggerMock = jest.createMockFromModule('../../utils/logger');
+const loggerMock = jest.createMockFromModule('../../logger/logger');
 const { AppError, ApplicationExceptions } = require('../../utils/applicationExceptions');
 const taskService = require('../taskService');
 const User = require('../../models/user');
