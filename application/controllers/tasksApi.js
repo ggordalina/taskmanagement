@@ -1,5 +1,5 @@
 const { getFormatedResponseBody, mapApplicationErrorToHttpStatusCode } = require('../utils/httpUtils');
-const broker = require('../notification-centre/broker')();
+const { publishMessage } = require('../notification-centre/broker');
 const Task = require('../models/task');
 
 const tasksApi = (taskService) => {
@@ -117,7 +117,7 @@ const tasksApi = (taskService) => {
                 return;
             }
 
-            broker.publish('task_op', `Task ${taskCode} has been closed by ${currentUser.name} on ${closingDate.toUTCString()}`);
+            publishMessage('task_op', `Task ${taskCode} has been closed by ${currentUser.name} on ${closingDate.toUTCString()}`);
             response.status(204).send();
         } catch (error) {
             response.status(500).send(getFormatedResponseBody(error, null));

@@ -1,10 +1,14 @@
+jest.mock('../../notification-centre/broker');
+
 const taskServiceMock = jest.createMockFromModule('../../services/taskService');
+const broker = require('../../notification-centre/broker');
 const taskApi = require('../tasksApi');
 const Task = require('../../models/task');
 
+
 const moreThanHalfOf2500Characters = Array(1251).fill().map((_, i, arr) => 'a');
 const getApi = () => taskApi(taskServiceMock);
-const defaultUser = { isManager: false, id: 1234 };
+const defaultUser = { isManager: false, id: 1234, name: 'Thomas' };
 const defaultTask = new Task('1234', 'testing', false, null, 1234);
 let responseMock = {
     status: () => { },
@@ -20,6 +24,10 @@ beforeEach(() => {
 
     responseMock.status = jest.fn(() => responseMock);
     responseMock.send = jest.fn(() => { });
+});
+
+afterEach(() => {
+    jest.clearAllMocks();
 });
 
 describe('parameters', () => {
@@ -456,8 +464,12 @@ describe('patchCloseDate', () => {
 
     test('taskService.update resturns data and returns ok', async () => {
         // arrange
+        const publishMessageSpy = jest.spyOn(broker, 'publishMessage');
         const request = { currentUser: defaultUser, params: { code: defaultTask.code } };
         const expectedStatus = 204;
+        const expectedPublishingTopic = 'task_op';
+        const expectedInitPublishingMessage = `Task ${defaultTask.code} has been closed by ${defaultUser.name} on`;
+        const regEx = new RegExp(`^[${expectedInitPublishingMessage}]`);
         taskServiceMock.update = jest.fn(() => [null, true])
 
         // act
@@ -472,6 +484,9 @@ describe('patchCloseDate', () => {
         expect(taskServiceMock.update.mock.calls[0][0]).toBe(defaultUser);
         expect(taskServiceMock.update.mock.calls[0][1]).toBe(defaultTask.code);
         expect(taskServiceMock.update.mock.calls[0][2]).not.toBeNull();
+        expect(publishMessageSpy.mock.calls).toHaveLength(1);
+        expect(publishMessageSpy.mock.calls[0][0]).toBe(expectedPublishingTopic);
+        expect(publishMessageSpy.mock.calls[0][1]).toMatch(regEx);
     });
 });
 

@@ -1,40 +1,40 @@
 const mqqt = require("async-mqtt");
-
 const topicsToSubscribe = ['task_op'];
 
-const init = () => {
-    const client = mqqt.connect("tcp://broker:1883", {
-        username: process.env.MQ_BROKER_USERNAME,
-        password: process.env.MQ_BROKER_PASSWORD
-    });
+let client;
+client = mqqt.connect("tcp://broker:1883", {
+    username: process.env.MQ_BROKER_USERNAME,
+    password: process.env.MQ_BROKER_PASSWORD
+});
 
-    client.on('connect', (_) => {
-        console.log('broker connected');
-    });
+client.on('connect', (_) => {
+    console.log('broker connected');
+});
 
-    client.on('error', (err) => {
-        console.log('broker error', err);
-    });
+client.on('error', (err) => {
+    console.log('broker error', err);
+});
 
-    client.subscribe(topicsToSubscribe, (error) => {
-        if (error) {
-            console.log('error on subscription', err);
-        }
-    });
+client.subscribe(topicsToSubscribe, (error) => {
+    if (error) {
+        console.log('error on subscription', err);
+    }
+});
 
-    client.on('message', (topic, payload, _) => {
-        console.log(payload.toString());
-    });
+client.on('message', (_, payload, __) => {
+    console.log(payload.toString());
+});
 
-    const publish = async (topic, message) => {
-        try {
-            await client.publish(topic, message);
-        } catch (err) {
-            console.log(err.stack)
-        }
+const publishMessage = async (topic, message) => {
+    if (!client) {
+        throw new Error('client has not been initialized');
     }
 
-    return { publish };
+    try {
+        await client.publish(topic, message);
+    } catch (err) {
+        console.log(err.stack)
+    }
 }
 
-module.exports = init;
+module.exports = { publishMessage };
