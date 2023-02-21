@@ -491,9 +491,28 @@ describe('patchCloseDate', () => {
 });
 
 describe('remove', () => {
-    test('taskService.remove throws error and returns internal server error', async () => {
+    test('user is not manager and returns forbidden', async () => {
         // arrange
         const request = { currentUser: defaultUser, params: { code: defaultTask.code } };
+        const expectedStatus = 403;
+        const expectedError = 'ask a manager to delete the task';
+        const expectedResponseBody = { error: expectedError, data: null };
+
+        // act
+        await getApi().remove(request, responseMock);
+
+        // assert
+        expect(responseMock.status.mock.calls).toHaveLength(1);
+        expect(responseMock.status.mock.calls[0][0]).toBe(expectedStatus);
+        expect(responseMock.send.mock.calls).toHaveLength(1);
+        expect(responseMock.send.mock.calls[0][0]).toEqual(expectedResponseBody);
+        expect(taskServiceMock.remove.mock.calls).toHaveLength(0);
+    });
+
+    test('taskService.remove throws error and returns internal server error', async () => {
+        // arrange
+        const currentUser = { isManager: true, id: defaultUser.id, name: defaultUser.name };
+        const request = { currentUser: currentUser, params: { code: defaultTask.code } };
         const expectedStatus = 500;
         const expectedError = 'internal error';
         const expectedResponseBody = { error: expectedError, data: null };
@@ -508,13 +527,14 @@ describe('remove', () => {
         expect(responseMock.send.mock.calls).toHaveLength(1);
         expect(responseMock.send.mock.calls[0][0]).toEqual(expectedResponseBody);
         expect(taskServiceMock.remove.mock.calls).toHaveLength(1);
-        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(defaultUser);
+        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(currentUser);
         expect(taskServiceMock.remove.mock.calls[0][1]).toBe(defaultTask.code);
     });
 
     test('taskService.remove returns error and returns not found', async () => {
         // arrange
-        const request = { currentUser: defaultUser, params: { code: defaultTask.code} };
+        const currentUser = { isManager: true, id: defaultUser.id, name: defaultUser.name };
+        const request = { currentUser: currentUser, params: { code: defaultTask.code } };
         const expectedStatus = 404;
         const expectedError = 'task does not exist';
         const expectedResponseBody = { error: expectedError, data: null };
@@ -529,13 +549,14 @@ describe('remove', () => {
         expect(responseMock.send.mock.calls).toHaveLength(1);
         expect(responseMock.send.mock.calls[0][0]).toEqual(expectedResponseBody);
         expect(taskServiceMock.remove.mock.calls).toHaveLength(1);
-        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(defaultUser);
+        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(currentUser);
         expect(taskServiceMock.remove.mock.calls[0][1]).toBe(defaultTask.code);
     });
 
     test('taskService.remove resturns data and returns ok', async () => {
         // arrange
-        const request = { currentUser: defaultUser, params: { code: defaultTask.code } };
+        const currentUser = { isManager: true, id: defaultUser.id, name: defaultUser.name };
+        const request = { currentUser: currentUser, params: { code: defaultTask.code } };
         const expectedStatus = 204;
         taskServiceMock.remove = jest.fn(() => [null, true])
 
@@ -548,7 +569,7 @@ describe('remove', () => {
         expect(responseMock.send.mock.calls).toHaveLength(1);
         expect(responseMock.send.mock.calls[0][0]).toBeUndefined();
         expect(taskServiceMock.remove.mock.calls).toHaveLength(1);
-        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(defaultUser);
+        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(currentUser);
         expect(taskServiceMock.remove.mock.calls[0][1]).toBe(defaultTask.code);
     });
 });

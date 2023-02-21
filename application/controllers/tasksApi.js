@@ -126,8 +126,16 @@ const tasksApi = (taskService) => {
 
     const remove = async (request, response) => {
         try {
+            const currentUser = request.currentUser;
+            if (!currentUser.isManager) {
+                response
+                    .status(403)
+                    .send(getFormatedResponseBody('ask a manager to delete the task', null));
+                return;
+            }
+
             const taskCode = request.params.code;
-            const [error] = await taskService.remove(request.currentUser, taskCode); 
+            const [error] = await taskService.remove(currentUser, taskCode); 
             if (error) {
                 response
                     .status(mapApplicationErrorToHttpStatusCode(error.exception))
