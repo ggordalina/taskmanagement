@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const webApi = require('./application/webApi');
 
 const app = express();
-const port = process.env.APP_PORT;
+const port = 3000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

@@ -1,10 +1,14 @@
+jest.mock('../../notification-centre/broker');
+
 const taskServiceMock = jest.createMockFromModule('../../services/taskService');
+const broker = require('../../notification-centre/broker');
 const taskApi = require('../tasksApi');
 const Task = require('../../models/task');
 
+
 const moreThanHalfOf2500Characters = Array(1251).fill().map((_, i, arr) => 'a');
 const getApi = () => taskApi(taskServiceMock);
-const defaultUser = { isManager: false, id: 1234 };
+const defaultUser = { isManager: false, id: 1234, name: 'Thomas' };
 const defaultTask = new Task('1234', 'testing', false, null, 1234);
 let responseMock = {
     status: () => { },
@@ -20,6 +24,10 @@ beforeEach(() => {
 
     responseMock.status = jest.fn(() => responseMock);
     responseMock.send = jest.fn(() => { });
+});
+
+afterEach(() => {
+    jest.clearAllMocks();
 });
 
 describe('parameters', () => {
@@ -456,8 +464,12 @@ describe('patchCloseDate', () => {
 
     test('taskService.update resturns data and returns ok', async () => {
         // arrange
+        const publishMessageSpy = jest.spyOn(broker, 'publishMessage');
         const request = { currentUser: defaultUser, params: { code: defaultTask.code } };
         const expectedStatus = 204;
+        const expectedPublishingTopic = 'task_op';
+        const expectedInitPublishingMessage = `Task ${defaultTask.code} has been closed by ${defaultUser.name} on`;
+        const regEx = new RegExp(`^[${expectedInitPublishingMessage}]`);
         taskServiceMock.update = jest.fn(() => [null, true])
 
         // act
@@ -472,13 +484,35 @@ describe('patchCloseDate', () => {
         expect(taskServiceMock.update.mock.calls[0][0]).toBe(defaultUser);
         expect(taskServiceMock.update.mock.calls[0][1]).toBe(defaultTask.code);
         expect(taskServiceMock.update.mock.calls[0][2]).not.toBeNull();
+        expect(publishMessageSpy.mock.calls).toHaveLength(1);
+        expect(publishMessageSpy.mock.calls[0][0]).toBe(expectedPublishingTopic);
+        expect(publishMessageSpy.mock.calls[0][1]).toMatch(regEx);
     });
 });
 
 describe('remove', () => {
-    test('taskService.remove throws error and returns internal server error', async () => {
+    test('user is not manager and returns forbidden', async () => {
         // arrange
         const request = { currentUser: defaultUser, params: { code: defaultTask.code } };
+        const expectedStatus = 403;
+        const expectedError = 'ask a manager to delete the task';
+        const expectedResponseBody = { error: expectedError, data: null };
+
+        // act
+        await getApi().remove(request, responseMock);
+
+        // assert
+        expect(responseMock.status.mock.calls).toHaveLength(1);
+        expect(responseMock.status.mock.calls[0][0]).toBe(expectedStatus);
+        expect(responseMock.send.mock.calls).toHaveLength(1);
+        expect(responseMock.send.mock.calls[0][0]).toEqual(expectedResponseBody);
+        expect(taskServiceMock.remove.mock.calls).toHaveLength(0);
+    });
+
+    test('taskService.remove throws error and returns internal server error', async () => {
+        // arrange
+        const currentUser = { isManager: true, id: defaultUser.id, name: defaultUser.name };
+        const request = { currentUser: currentUser, params: { code: defaultTask.code } };
         const expectedStatus = 500;
         const expectedError = 'internal error';
         const expectedResponseBody = { error: expectedError, data: null };
@@ -493,13 +527,14 @@ describe('remove', () => {
         expect(responseMock.send.mock.calls).toHaveLength(1);
         expect(responseMock.send.mock.calls[0][0]).toEqual(expectedResponseBody);
         expect(taskServiceMock.remove.mock.calls).toHaveLength(1);
-        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(defaultUser);
+        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(currentUser);
         expect(taskServiceMock.remove.mock.calls[0][1]).toBe(defaultTask.code);
     });
 
     test('taskService.remove returns error and returns not found', async () => {
         // arrange
-        const request = { currentUser: defaultUser, params: { code: defaultTask.code} };
+        const currentUser = { isManager: true, id: defaultUser.id, name: defaultUser.name };
+        const request = { currentUser: currentUser, params: { code: defaultTask.code } };
         const expectedStatus = 404;
         const expectedError = 'task does not exist';
         const expectedResponseBody = { error: expectedError, data: null };
@@ -514,13 +549,14 @@ describe('remove', () => {
         expect(responseMock.send.mock.calls).toHaveLength(1);
         expect(responseMock.send.mock.calls[0][0]).toEqual(expectedResponseBody);
         expect(taskServiceMock.remove.mock.calls).toHaveLength(1);
-        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(defaultUser);
+        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(currentUser);
         expect(taskServiceMock.remove.mock.calls[0][1]).toBe(defaultTask.code);
     });
 
     test('taskService.remove resturns data and returns ok', async () => {
         // arrange
-        const request = { currentUser: defaultUser, params: { code: defaultTask.code } };
+        const currentUser = { isManager: true, id: defaultUser.id, name: defaultUser.name };
+        const request = { currentUser: currentUser, params: { code: defaultTask.code } };
         const expectedStatus = 204;
         taskServiceMock.remove = jest.fn(() => [null, true])
 
@@ -533,7 +569,7 @@ describe('remove', () => {
         expect(responseMock.send.mock.calls).toHaveLength(1);
         expect(responseMock.send.mock.calls[0][0]).toBeUndefined();
         expect(taskServiceMock.remove.mock.calls).toHaveLength(1);
-        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(defaultUser);
+        expect(taskServiceMock.remove.mock.calls[0][0]).toBe(currentUser);
         expect(taskServiceMock.remove.mock.calls[0][1]).toBe(defaultTask.code);
     });
 });
